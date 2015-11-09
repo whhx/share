@@ -152,7 +152,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       if (result == null)
          return null;
       String imgUrl = result.getImgUrl();
-      result.setImgUrl(cdnBase + imgUrl);
+      result.setImgUrl(cdnBase +"/"+imgUrl);
       String template = result.getTemplate();// 模版
       result.setTemplate(cdnBase + template);
 
