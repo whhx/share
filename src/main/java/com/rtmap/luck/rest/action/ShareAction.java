@@ -154,7 +154,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       String imgUrl = result.getImgUrl();
       result.setImgUrl(cdnBase +"/"+imgUrl);
       String template = result.getTemplate();// 模版
-      result.setTemplate(cdnBase + template);
+      result.setTemplate(cdnBase +"/"+ template);
 
       // 组装店铺信息(名称,logo)
       Result shop = levelMapper.findShop(id);
@@ -168,7 +168,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
          String logoUrl = shop.getLogoUrl();
          if (StringUtils.isNotBlank(logoUrl))
          {
-            result.setLogoUrl(cdnBase + logoUrl);
+            result.setLogoUrl(cdnBase +"/"+logoUrl);
          }
 
       }
