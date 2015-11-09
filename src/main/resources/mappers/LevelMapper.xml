@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rtmap.luck.mapper.LevelMapper">
+
+
+	<select id="findShop" parameterType="Long" resultType="Result">
+		select
+		s.name shopName,s.logo logoUrl from u_shop s,shake_prize l
+		where s.id=l.provider_shopid and l.id=#{id}
+	</select>
+
+	<select id="findMarket" parameterType="Long" resultType="Result">
+		select m.name shopName,m.logo logoUrl from u_market m,shake_prize l
+		where m.id=l.market_id and l.id=#{id}
+	</select>
+
+	<select id="findById" parameterType="Long" resultType="Result">
+		select
+		l.prize_level level,l.main_info main,l.extend_info extend,l.start_time
+		startTime,l.end_time endTime,l.writeoff_position position,l.image_url
+		imgUrl,l.num,l.issue,l.coupon_type coupon,l.desc_clause 'desc',t.filepath template
+		from shake_prize l ,shake_template t where  l.template_id=t.id and l.id=#{id}
+	</select>
+
+
+	
+</mapper>

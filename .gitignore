@@ -1,0 +1,22 @@
+# Ignore .svn metadata files
+.svn
+ 
+#Ignore Maven generated target folders
+target
+target.bak
+
+# Ignore eclipse files
+.project
+.classpath
+.settings
+Thumbs.db
+
+# Ignore IDEA files
+*.iml
+*.ipr
+*.iws
+/.idea
+
+.faces-config.xml.jsfdia
+.externalToolBuilders
+.metadata
