@@ -6,8 +6,8 @@
 		</Console>
 
 		<RollingRandomAccessFile name="RollingRandomAccessFile"
-			immediateFlush="true" fileName="${sys:catalina.base}/logs/luck.log"
-			filePattern="${sys:catalina.base}/logs/luck.%d{yyyy-MM-dd}.log">
+			immediateFlush="true" fileName="${sys:catalina.base}/logs/share.log"
+			filePattern="${sys:catalina.base}/logs/share.%d{yyyy-MM-dd}.log">
 			<PatternLayout pattern="%d %-5p [%c] (%t) %m%n" />
 			<Policies>
 				<TimeBasedTriggeringPolicy />

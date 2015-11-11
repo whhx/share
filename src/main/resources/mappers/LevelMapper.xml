@@ -5,23 +5,69 @@
 
 	<select id="findShop" parameterType="Long" resultType="Result">
 		select
-		s.name shopName,s.logo logoUrl from u_shop s,shake_prize l
-		where s.id=l.provider_shopid and l.id=#{id}
+			s.name shopName,s.logo shopLogoUrl 
+		from 
+			u_shop s,shake_prize l
+		where 
+			s.id=l.provider_shopid and l.id=#{id}
 	</select>
 
 	<select id="findMarket" parameterType="Long" resultType="Result">
-		select m.name shopName,m.logo logoUrl from u_market m,shake_prize l
-		where m.id=l.market_id and l.id=#{id}
+		SELECT
+			m.name shopName,m.logo marketLogoUrl,m.address,a.name activityName,a.description,a.channel,
+			a.is_default isDefault,a.start_date startTime,a.end_date endTime,a.id activityId,
+			l.desc_clause 'desc',l.image_url imgUrl,l.main_info main,l.extend_info extend,
+			l.start_time startTime,l.num,l.issue,l.end_time endTime,l.writeoff_position position,l.shareable shareAble   
+		FROM
+			u_market m,
+			shake_prize l,
+			shake_activity a
+		WHERE m.id = l.market_id
+			AND l.activity_id = a.id
+			AND l.id = #{id} 
 	</select>
 
 	<select id="findById" parameterType="Long" resultType="Result">
 		select
-		l.prize_level level,l.main_info main,l.extend_info extend,l.start_time
-		startTime,l.end_time endTime,l.writeoff_position position,l.image_url
-		imgUrl,l.num,l.issue,l.coupon_type coupon,l.desc_clause 'desc',t.filepath template
-		from shake_prize l ,shake_template t where  l.template_id=t.id and l.id=#{id}
+			l.prize_level level,l.coupon_type coupon,t.filepath template,l.end_time endTime,
+			a.channel,a.is_default isDefault,a.id activityId  
+		from 
+			shake_prize l ,
+			shake_template t,
+			shake_activity a 
+		where 
+			l.template_id=t.id 
+		and a.id = l.activity_id
+		and l.id=#{id}
 	</select>
 
-
+	<select id="last" resultType="String">
+		SELECT 
+			name
+		FROM 
+			shake_prize 
+		ORDER BY create_time DESC 
+		LIMIT 0,10
+	</select>
+	
+	
+	<select id="prizeCount" resultType="Integer">
+		select 
+			count(i.id) 
+		from
+			shake_prize_instance i,shake_prize l
+		where 
+			i.prize_id=l.id 
+			and l.id=#{0} 
+			and i.open_id=#{1}
+	</select>
+	
+	<select id="havePrize" resultType="Integer">
+		SELECT 
+			(num-issue) num 
+		FROM 
+			shake_prize 
+		WHERE id= #{id}
+	</select>
 	
 </mapper>

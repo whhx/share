@@ -7,6 +7,7 @@
  */
 package com.rtmap.luck.utils;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -18,12 +19,19 @@ public class DateUtil
 {
 
    /**
-    * 得到日期时间字符串 精确到秒
+    * 得到日期时间字符串 
     */
-   public static String format(Long time)
+   public static Long format(String time)
    {
-      SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-      return df.format(new Date(time));
+      try
+      {
+         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+         return df.parse(time).getTime();
+      } catch (ParseException e)
+      {
+         return null;
+      }
+      
    }
 
    public static String timeLong(Long time)
