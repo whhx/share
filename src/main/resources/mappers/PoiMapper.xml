@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rtmap.luck.mapper.PoiMapper">
+
+
+	<select id="findPrizeInfo" parameterType="Long" resultType="Poi">
+		SELECT
+		writeoff_shopid shopId,build_id buildId,floor 
+		FROM shake_prize
+		WHERE id = #{id}
+	</select>
+
+	<select id="findByShopId" parameterType="Long" resultType="Poi">
+		SELECT build_id buildId, floor, x, y
+		FROM u_shop 
+		WHERE id = #{shopId}
+	</select>
+	
+</mapper>

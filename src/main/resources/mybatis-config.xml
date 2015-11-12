@@ -4,11 +4,12 @@
 
 	<typeAliases>
 		<typeAlias alias="Result" type="com.rtmap.luck.common.Result" />
-		
+		<typeAlias alias="Poi" type="com.rtmap.luck.model.Poi" />
 	</typeAliases>
 
 	<mappers>
 		<mapper resource="mappers/LevelMapper.xml" />
+		<mapper resource="mappers/PoiMapper.xml" />
 	</mappers>
 
 

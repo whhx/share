@@ -30,6 +30,8 @@ import com.mongodb.client.MongoDatabase;
 import com.rtmap.luck.common.Result;
 import com.rtmap.luck.common.Trace;
 import com.rtmap.luck.mapper.LevelMapper;
+import com.rtmap.luck.mapper.PoiMapper;
+import com.rtmap.luck.model.Poi;
 import com.rtmap.luck.utils.CommUtil;
 import com.rtmap.luck.utils.DateUtil;
 
@@ -51,8 +53,10 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    private static Logger log = LoggerFactory.getLogger(ShareAction.class);
    private LevelMapper levelMapper;
 
+   private PoiMapper poiMapper;
+
    private MongoClient mongoClient;
-   
+
    private MemcachedClient memcachedClient;
 
    private Jedis jedis;
@@ -121,8 +125,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
     * 卡券信息接口
     */
    @RequestMapping(value = "/prize/{id}")
-   public Result prize(@PathVariable("id") Long id,
-                       @RequestParam(value = "openId", required = false) String openId)
+   public Result prize(@PathVariable("id") Long id, @RequestParam(value = "openId", required = false) String openId)
    {
       Result result = null;
 
@@ -130,7 +133,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       String json = jedis.get(key);
       if (json == null)
       {
-         result = fit(id,openId);
+         result = fit(id, openId);
          if (result == null)
          {
             result = new Result();
@@ -150,95 +153,157 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
 
    }
 
-   private Result fit(Long id,String openId)
+   /**
+    * 
+    * 定位需要信息
+    * 
+    * @param id
+    * @return
+    */
+   @RequestMapping(value = "/location/{id}")
+   public Poi location(@PathVariable("id") long id)
+   {
+      Poi poi = null;
+
+      String key = "PRIZE_POI_" + id;
+      String json = jedis.get(key);
+      if (json == null)
+      {
+         //从数据库中根据prize查找buildId，floor，shopId
+         poi = poiMapper.findPrizeInfo(id);
+         if (poi == null)
+         {
+            return null;
+         }
+
+         if (poi.getShopId() == null)
+         {
+            if ("".equals(poi.getFloor())||poi.getFloor()==null)
+            {
+               poi.setFloor("F1");
+            }
+
+         } else
+         {
+            poi = poiMapper.findByShopId(poi.getShopId());
+         }
+         json = CommUtil.json(poi);
+         jedis.set(key, json);
+         jedis.expire(key, 60 * 60);//缓存1小时
+         log.info("{}={}", key, json);
+
+      } else
+      {
+         poi = CommUtil.read(json, Poi.class);
+      }
+
+      return poi;
+
+   }
+
+   private Result fit(Long id, String openId)
    {
       String cdnBase = commonMap.get("cdn.base.url");
-      
+
       // 组装等级信息
       Result result = levelMapper.findById(id);
-      if(result == null)
+      if (result == null)
          return null;
-      
+
       //判断活动类型（0 抽奖，1发卷）
       Integer channel = result.getChannel();
-      
+
       //判断是否是APP(0 Pc端，1全场APP端，2店内APP，默认为0)
       Integer isDefault = result.getIsDefault();
-      
-      if(0 == channel && 0 == isDefault)
-      {  
-         //PC活动需要显示的数据有：商场logo，商场名称，活动名称，活动说明，商场地址，活动有效时间，优惠券名称（后十个优惠券主标题）
-         Result market = levelMapper.findMarket(id);
-         market.setMarketLogoUrl(cdnBase +"/"+market.getMarketLogoUrl());
-         market.setTemplate(cdnBase +"/"+ result.getTemplate());// 模版
-         
+
+      if ((0 == channel) && 0 == isDefault)
+      {
+         Result market = assemble(id);
+
          List<String> lastList = levelMapper.last();
          market.setLast(lastList);
          market.setBrochur(0);//待定是否还保留(显示宣传页)
-         market.setHaveCount(levelMapper.havePrize(id));
-         
+
          return market;
       }
-      
+
       //发券活动店内APP抽奖，显示宣传页
-      if(1 == channel && 2 == isDefault){
+      if (1 == channel && 2 == isDefault)
+      {
          //显示数据为：商场logo，商场名称，商场地址，有效时间，商户logo，活动名称，十个最近的奖券，活动说明（优惠券的desc）
-         Result market = levelMapper.findMarket(id);
-         
-         market.setMarketLogoUrl(cdnBase +"/"+market.getMarketLogoUrl());
-         market.setTemplate(cdnBase +"/"+ result.getTemplate());// 模版
+         Result market = assemble(id);
          Result shop = levelMapper.findShop(id);
-         
-         market.setShopLogoUrl(cdnBase +"/"+shop.getShopLogoUrl());
+         if(shop == null){
+            shop = market;
+         }
+
+         market.setShopLogoUrl(cdnBase + "/" + shop.getShopLogoUrl());
          List<String> lastList = levelMapper.last();
          market.setLast(lastList);
-         market.setHaveCount(levelMapper.havePrize(id));
          market.setBrochur(0);
          return market;
-         
+
       }
-      
-      if(1 == isDefault || (1 == channel && 0 == isDefault))
-      {  
+
+      if (1 == isDefault || (1 == channel && 0 == isDefault))
+      {
          //App商场或者PC发券,如果已经领取过奖品，则显示宣传页
-         Result market = levelMapper.findMarket(id);
-         if(levelOwn(id, market, openId)>0){
-            
-            market.setMarketLogoUrl(cdnBase +"/"+market.getMarketLogoUrl());
-            market.setTemplate(cdnBase +"/"+ result.getTemplate());// 模版
+         Result market = assemble(id);
+         
+         if (levelOwn(id, market, openId) > 0)
+         {
             Result shop = levelMapper.findShop(id);
-            
-            market.setShopLogoUrl(cdnBase +"/"+shop.getShopLogoUrl());
+            if(shop == null){
+               shop = market;
+            }
+
+            market.setShopLogoUrl(cdnBase + "/" + shop.getShopLogoUrl());
             List<String> lastList = levelMapper.last();
             market.setLast(lastList);
-            market.setHaveCount(levelMapper.havePrize(id));
             market.setBrochur(0);
+            
             return market;
-            
-         }else {
-            //不过是否还有券都显示这个页面（如果有券则显示领取，无则显示已领完）
+         } else
+         {
+            //不管是否还有券都显示这个页面（如果有券则显示领取，无则显示已领完）
             //符合抽取条件，显示的数据有：商户名称，商户logo，优惠券上图片，优惠卷主题，优惠券副标题，兑奖地址，优惠券有效期，优惠劵的活动说明
-            market = levelMapper.findMarket(id);
             Result shop = levelMapper.findShop(id);
-            market.setMarketLogoUrl(cdnBase +"/"+market.getMarketLogoUrl());
-            market.setTemplate(cdnBase +"/"+ result.getTemplate());// 模版
-            market.setImgUrl(cdnBase +"/"+market.getImgUrl());//优惠券上传的图片
+            if(shop == null){
+               shop = market;
+            }
+           
+            market.setImgUrl(cdnBase + "/" + market.getImgUrl());//优惠券上传的图片
             market.setShopName(shop.getShopName());
-            market.setShopLogoUrl(cdnBase +"/"+shop.getShopLogoUrl());
-            market.setHaveCount(levelMapper.havePrize(id));
-            
+            market.setShopLogoUrl(cdnBase + "/" + shop.getShopLogoUrl());
+
             return market;
          }
       }
-         
       return null;
-      
    }
    
+   public Result assemble(Long id)
+   {
+      String cdnBase = commonMap.get("cdn.base.url");
+      
+      Result result = levelMapper.findById(id);
+      Result market = levelMapper.findMarket(id);
+      if(market == null){
+         return result;
+      }
+      
+      market.setMarketLogoUrl(cdnBase + "/" + market.getMarketLogoUrl());
+      market.setTemplate(cdnBase + "/" + result.getTemplate());// 模版
+      market.setHaveCount(levelMapper.havePrize(id));
+      
+      return market;
+      
+   }
+
    /**
     * 根据等级id和openId查用户已经获得的该奖品数量
     */
-   public Integer levelOwn(Long id, Result result,String openId)
+   public Integer levelOwn(Long id, Result result, String openId)
    {
       String key = "A" + result.getActivityId() + "_LEVEL_OWN_" + id + "_" + openId;
       Integer own = memcachedClient.get(key, new IntegerTranscoder());
@@ -246,31 +311,30 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       if (own == null)
       {
          own = levelMapper.prizeCount(id, openId);
-         memcachedClient.set(key, expire(id,result), own);
+         memcachedClient.set(key, expire(id, result), own);
          log.debug("Cache KV:{}={}", key, own);
       }
       return own;
    }
-   
-   
+
    /**
     * 获取过期时间
     */
-   public int expire(Long id,Result result)
+   public int expire(Long id, Result result)
    {
-      return expire(id, false,result);
+      return expire(id, false, result);
    }
 
    /**
     * 获取/重建过期时间 build=true重建
     */
-   public int expire(Long id, boolean build,Result result)
+   public int expire(Long id, boolean build, Result result)
    {
       String key = "A" + id + "_EXPIRE_TIME";
       Integer expireTime = memcachedClient.get(key, new IntegerTranscoder());
       if (expireTime == null || build)
       {
-        String endDate = result.getEndTime();
+         String endDate = result.getEndTime();
          Long endTime = DateUtil.format(endDate);
          Long endSec = endTime / 1000;
          expireTime = endSec.intValue();
@@ -334,7 +398,15 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    {
       this.memcachedClient = memcachedClient;
    }
-   
-   
+
+   public PoiMapper getPoiMapper()
+   {
+      return poiMapper;
+   }
+
+   public void setPoiMapper(PoiMapper poiMapper)
+   {
+      this.poiMapper = poiMapper;
+   }
 
 }
