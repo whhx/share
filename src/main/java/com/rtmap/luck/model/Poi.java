@@ -18,7 +18,7 @@ public class Poi
    /**
     * 建筑物ID
     */
-   private Long buildId;
+   private String buildId;
 
    /**
     * 商铺楼层
@@ -42,12 +42,12 @@ public class Poi
       this.shopId = shopId;
    }
 
-   public Long getBuildId()
+   public String getBuildId()
    {
       return buildId;
    }
 
-   public void setBuildId(Long buildId)
+   public void setBuildId(String buildId)
    {
       this.buildId = buildId;
    }

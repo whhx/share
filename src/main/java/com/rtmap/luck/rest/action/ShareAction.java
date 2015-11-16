@@ -10,7 +10,6 @@ package com.rtmap.luck.rest.action;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.bson.Document;
 import org.slf4j.Logger;
@@ -276,11 +275,9 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       if ((0 == channel) && 0 == isDefault)
       {
          Result market = assemble(id);
-         market.setTemplate(cdnBase + "/" + result.getTemplate());// 模版
          List<String> lastList = levelMapper.last(market.getActivityId());
          market.setLast(lastList);
-         market.setBrochur(0);//待定是否还保留(显示宣传页)
-         market.setLevel(result.getLevel());
+         market.setBrochur(0);//待定是否保留(显示宣传页)
          return market;
       }
 
@@ -289,11 +286,9 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       {
          //显示数据为：商场logo，商场名称，商场地址，有效时间，商户logo，活动名称，十个最近的奖券，活动说明（优惠券的desc）
          Result market = assemble(id);
-         market.setTemplate(cdnBase + "/" + result.getTemplate());// 模版
          List<String> lastList = levelMapper.last(market.getActivityId());
          market.setLast(lastList);
          market.setBrochur(0);
-         market.setLevel(result.getLevel());
          return market;
 
       }
@@ -305,20 +300,16 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
 
          if (levelOwn(id, market, openId) > 0)
          {
-            market.setTemplate(cdnBase + "/" + result.getTemplate());// 模版
             List<String> lastList = levelMapper.last(market.getActivityId());
             market.setLast(lastList);
             market.setBrochur(0);
-            market.setLevel(result.getLevel());
 
             return market;
          } else
          {
             //不管是否还有券都显示这个页面（如果有券则显示领取，无则显示已领完）
             //符合抽取条件，显示的数据有：商户名称，商户logo，优惠券上图片，优惠卷主题，优惠券副标题，兑奖地址，优惠券有效期，优惠劵的活动说明
-            market.setTemplate(cdnBase + "/" + result.getTemplate());// 模版
             market.setImgUrl(cdnBase + "/" + market.getImgUrl());//优惠券上传的图片
-            market.setLevel(result.getLevel());
 
             return market;
          }
@@ -341,10 +332,12 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       {
          shop = market;
       }
+      market.setTemplate(cdnBase + "/" + result.getTemplate());// 模版
       market.setShopName(shop.getShopName());
       market.setMarketLogoUrl(cdnBase + "/" + market.getMarketLogoUrl());
       market.setHaveCount(levelMapper.havePrize(id));
       market.setShopLogoUrl(cdnBase + "/" + shop.getShopLogoUrl());
+      market.setLevel(result.getLevel());
 
       return market;
 
