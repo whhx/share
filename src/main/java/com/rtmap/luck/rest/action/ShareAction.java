@@ -10,6 +10,7 @@ package com.rtmap.luck.rest.action;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bson.Document;
 import org.slf4j.Logger;
@@ -63,10 +64,30 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
 
    private Map<String, String> commonMap;
 
+   private Document doc = null;
+
    //jsonp支持
    public ShareAction()
    {
       super("callback");
+   }
+
+   /**
+    * 
+    * 返回阅读数
+    * 
+    * @param id（券ID）
+    * @return
+    */
+   @RequestMapping(value = "/read/{id}")
+   public long read(@PathVariable("id") String id)
+   {
+      String key = "PRIZE_EXPOSELOG";
+      String read = jedis.hget(key, id);
+      log.debug("{}:{}={}", key, id, read);
+      if (read == null)
+         read = "0";
+      return Long.valueOf(read);
    }
 
    /**
@@ -77,7 +98,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    @RequestMapping(value = "/view/{id}")
    public Long view(@PathVariable("id") String id)
    {
-      String key = "PRIZE_CLICK";
+      String key = "PRIZE_TOUCH";
       String click = jedis.hget(key, id);
       log.debug("{}:{}={}", key, id, click);
       if (click == null)
@@ -93,9 +114,45 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    @RequestMapping(value = "/click/{id}")
    public Long click(@PathVariable("id") String id)
    {
-      String key = "PRIZE_CLICK";
+      String key = "PRIZE_TOUCH";
       Long click = jedis.hincrBy(key, id, 1);
       return click;
+   }
+
+   /**
+    * 点赞数+1
+    * 
+    * @param id
+    * @param openId
+    * @return
+    */
+   @RequestMapping(value = "/click/{id}/{openId}")
+   public Long click2(@PathVariable("id") String id, @PathVariable("openId") String openId)
+   {
+      MongoDatabase database = mongoClient.getDatabase("promo");
+      MongoCollection<Document> collection = database.getCollection("share");
+
+      String key = "PRIZE_TOUCH";
+
+      String entity = id+"_"+openId;
+      Long num = jedis.hsetnx(key, entity, entity);
+      Date date = new Date();
+      if (num == 0)
+      {
+
+         doc = new Document("prize_id", id).append("open_id", openId).append("create_time", date)
+               .append("time", date.getTime()).append("touch", 0);
+         collection.insertOne(doc);
+         return view(id);
+      } else
+      {
+         Long click = jedis.hincrBy(key, id, 1);
+
+         doc = new Document("prize_id", id).append("open_id", openId).append("create_time", date)
+               .append("time", date.getTime()).append("touch", 1);
+         collection.insertOne(doc);
+         return click;
+      }
    }
 
    /**
@@ -140,7 +197,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
          }
          json = CommUtil.json(result);
          jedis.set(key, json);
-         jedis.expire(key, 2 * 2);//缓存小时
+         jedis.expire(key, 60 * 60);//缓存一个小时
          log.info("{}={}", key, json);
 
       } else
@@ -178,7 +235,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
 
          if (poi.getShopId() == null)
          {
-            if ("".equals(poi.getFloor())||poi.getFloor()==null)
+            if ("".equals(poi.getFloor()) || poi.getFloor() == null)
             {
                poi.setFloor("F1");
             }
@@ -219,11 +276,11 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       if ((0 == channel) && 0 == isDefault)
       {
          Result market = assemble(id);
-
-         List<String> lastList = levelMapper.last();
+         market.setTemplate(cdnBase + "/" + result.getTemplate());// 模版
+         List<String> lastList = levelMapper.last(market.getActivityId());
          market.setLast(lastList);
          market.setBrochur(0);//待定是否还保留(显示宣传页)
-
+         market.setLevel(result.getLevel());
          return market;
       }
 
@@ -232,72 +289,65 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       {
          //显示数据为：商场logo，商场名称，商场地址，有效时间，商户logo，活动名称，十个最近的奖券，活动说明（优惠券的desc）
          Result market = assemble(id);
-         Result shop = levelMapper.findShop(id);
-         if(shop == null){
-            shop = market;
-         }
-
-         market.setShopLogoUrl(cdnBase + "/" + shop.getShopLogoUrl());
-         List<String> lastList = levelMapper.last();
+         market.setTemplate(cdnBase + "/" + result.getTemplate());// 模版
+         List<String> lastList = levelMapper.last(market.getActivityId());
          market.setLast(lastList);
          market.setBrochur(0);
+         market.setLevel(result.getLevel());
          return market;
 
       }
 
       if (1 == isDefault || (1 == channel && 0 == isDefault))
       {
-         //App商场或者PC发券,如果已经领取过奖品，则显示宣传页
+         //App商场或者PC发券,如果已经领取过，则显示宣传页
          Result market = assemble(id);
-         
+
          if (levelOwn(id, market, openId) > 0)
          {
-            Result shop = levelMapper.findShop(id);
-            if(shop == null){
-               shop = market;
-            }
-
-            market.setShopLogoUrl(cdnBase + "/" + shop.getShopLogoUrl());
-            List<String> lastList = levelMapper.last();
+            market.setTemplate(cdnBase + "/" + result.getTemplate());// 模版
+            List<String> lastList = levelMapper.last(market.getActivityId());
             market.setLast(lastList);
             market.setBrochur(0);
-            
+            market.setLevel(result.getLevel());
+
             return market;
          } else
          {
             //不管是否还有券都显示这个页面（如果有券则显示领取，无则显示已领完）
             //符合抽取条件，显示的数据有：商户名称，商户logo，优惠券上图片，优惠卷主题，优惠券副标题，兑奖地址，优惠券有效期，优惠劵的活动说明
-            Result shop = levelMapper.findShop(id);
-            if(shop == null){
-               shop = market;
-            }
-           
+            market.setTemplate(cdnBase + "/" + result.getTemplate());// 模版
             market.setImgUrl(cdnBase + "/" + market.getImgUrl());//优惠券上传的图片
-            market.setShopName(shop.getShopName());
-            market.setShopLogoUrl(cdnBase + "/" + shop.getShopLogoUrl());
+            market.setLevel(result.getLevel());
 
             return market;
          }
       }
       return null;
    }
-   
+
+   //整合数据market
    public Result assemble(Long id)
    {
       String cdnBase = commonMap.get("cdn.base.url");
-      
       Result result = levelMapper.findById(id);
+
       Result market = levelMapper.findMarket(id);
       if(market == null){
-         return result;
+         market = result;
       }
-      
+      Result shop = levelMapper.findShop(id);
+      if (shop == null)
+      {
+         shop = market;
+      }
+      market.setShopName(shop.getShopName());
       market.setMarketLogoUrl(cdnBase + "/" + market.getMarketLogoUrl());
-      market.setTemplate(cdnBase + "/" + result.getTemplate());// 模版
       market.setHaveCount(levelMapper.havePrize(id));
-      
+      market.setShopLogoUrl(cdnBase + "/" + shop.getShopLogoUrl());
+
       return market;
-      
+
    }
 
    /**

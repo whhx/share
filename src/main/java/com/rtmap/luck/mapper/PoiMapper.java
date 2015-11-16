@@ -7,8 +7,6 @@
  */
 package com.rtmap.luck.mapper;
 
-import java.util.List;
-
 import com.rtmap.luck.model.Poi;
 
 public interface PoiMapper

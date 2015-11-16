@@ -14,8 +14,8 @@
 
 	<select id="findMarket" parameterType="Long" resultType="Result">
 		SELECT
-			m.name shopName,m.logo marketLogoUrl,m.address,a.name activityName,a.description,a.channel,
-			a.is_default isDefault,a.start_date startTime,a.end_date endTime,a.id activityId,
+			m.name marketName,m.logo marketLogoUrl,m.address,a.name activityName,a.description,a.channel,
+			a.is_default isDefault,a.start_date startTime,a.end_date endTime,l.activity_id activityId,
 			l.desc_clause 'desc',l.image_url imgUrl,l.main_info main,l.extend_info extend,
 			l.start_time startTime,l.num,l.issue,l.end_time endTime,l.writeoff_position position,l.shareable shareAble   
 		FROM
@@ -29,25 +29,29 @@
 
 	<select id="findById" parameterType="Long" resultType="Result">
 		select
-			l.prize_level level,l.coupon_type coupon,t.filepath template,l.end_time endTime,
-			a.channel,a.is_default isDefault,a.id activityId  
+			l.coupon_type coupon,t.filepath template,l.desc_clause 'desc',
+			l.start_time startTime,l.num,l.issue,l.end_time endTime,
+			a.channel,a.is_default isDefault,a.id activityId,u.level level  
 		from 
 			shake_prize l ,
 			shake_template t,
-			shake_activity a 
+			shake_activity a,
+			`u_user` u 
 		where 
 			l.template_id=t.id 
 		and a.id = l.activity_id
+		and a.user_id = u.id 
 		and l.id=#{id}
 	</select>
 
-	<select id="last" resultType="String">
-		SELECT 
-			name
-		FROM 
-			shake_prize 
-		ORDER BY create_time DESC 
-		LIMIT 0,10
+	<select id="last" parameterType="Integer" resultType="String">
+	SELECT
+		name
+	FROM
+		shake_prize
+	WHERE activity_id=#{activityId}
+	ORDER BY create_time DESC
+	LIMIT 0,10
 	</select>
 	
 	

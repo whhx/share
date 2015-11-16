@@ -24,7 +24,7 @@ public interface LevelMapper
    public Result findById(Long id);
    
    //查询最近更新的奖券名称
-   public List<String> last();
+   public List<String> last(Integer acitivtyId);
    
    //判断用户是否满足抽奖
    public Integer prizeCount(Long id, String openId);

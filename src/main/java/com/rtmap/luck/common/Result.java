@@ -24,6 +24,10 @@ public class Result
     */
    private String shopName;
    /**
+    * 商店名称
+    */
+   private String marketName;
+   /**
     * 店铺LOGO
     */
    private String shopLogoUrl;
@@ -36,7 +40,7 @@ public class Result
 
    //奖品信息
    /**
-    * 奖品等级
+    * 1 商场，  2 商户
     */
    private String level;
 
@@ -432,8 +436,14 @@ public class Result
       this.haveCount = haveCount;
    }
 
-   
-   
-   
+   public String getMarketName()
+   {
+      return marketName;
+   }
+
+   public void setMarketName(String marketName)
+   {
+      this.marketName = marketName;
+   }
 
 }
