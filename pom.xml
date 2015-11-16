@@ -30,7 +30,7 @@
 		<commons.codec.version>1.10</commons.codec.version>
 		<joda.time.version>2.3</joda.time.version>
 		<spymemcached.version>2.11.7</spymemcached.version>
-		<jedis.version>2.7.2</jedis.version>
+		<jedis.version>2.1.0</jedis.version>
 
 	</properties>
 

@@ -21,7 +21,7 @@
 		<constructor-arg name="port" value="${redis.port}" />
 	</bean>
 
-<!-- 
+
 	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
         <property name="maxActive" value="200"/>
         <property name="maxIdle" value="100"/>
@@ -36,5 +36,5 @@
         <constructor-arg name="port" value="${redis.port}"/>
         <constructor-arg name="timeout" value="3600000"/>
     </bean>
-     -->
+     
 </beans>

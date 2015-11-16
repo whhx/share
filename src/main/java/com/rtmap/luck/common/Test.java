@@ -7,7 +7,7 @@
  */
 package com.rtmap.luck.common;
 
-import redis.clients.jedis.Jedis;
+//import redis.clients.jedis.Jedis;
 
 public class Test
 {
@@ -16,7 +16,7 @@ public class Test
    {
       
 
-      Jedis jedis = new Jedis();
+      /*Jedis jedis = new Jedis();
       
       Result r = new Result();
       Long id=1L;
@@ -25,7 +25,7 @@ public class Test
       jedis.set(key,"ss");
       jedis.expire(key, 60*60);
       
-      System.out.print(jedis.get(key+"s"));
+      System.out.print(jedis.get(key+"s"));*/
       
    }
 

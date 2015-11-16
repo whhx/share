@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.AbstractJsonpResponseBodyAdvice;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -51,6 +52,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
 {
 
    private static Logger log = LoggerFactory.getLogger(ShareAction.class);
+   
    private LevelMapper levelMapper;
 
    private PoiMapper poiMapper;
@@ -59,7 +61,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
 
    private MemcachedClient memcachedClient;
 
-   private Jedis jedis;
+   private JedisPool jedisPool;
 
    private Map<String, String> commonMap;
 
@@ -82,7 +84,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    public long read(@PathVariable("id") String id)
    {
       String key = "PRIZE_EXPOSELOG";
-      String read = jedis.hget(key, id);
+      String read = jedisPool.getResource().hget(key, id);
       log.debug("{}:{}={}", key, id, read);
       if (read == null)
          read = "0";
@@ -98,7 +100,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    public Long view(@PathVariable("id") String id)
    {
       String key = "PRIZE_TOUCH";
-      String click = jedis.hget(key, id);
+      String click = jedisPool.getResource().hget(key, id);
       log.debug("{}:{}={}", key, id, click);
       if (click == null)
          click = "0";
@@ -114,7 +116,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    public Long click(@PathVariable("id") String id)
    {
       String key = "PRIZE_TOUCH";
-      Long click = jedis.hincrBy(key, id, 1);
+      Long click = jedisPool.getResource().hincrBy(key, id, 1);
       return click;
    }
 
@@ -131,6 +133,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       MongoDatabase database = mongoClient.getDatabase("promo");
       MongoCollection<Document> collection = database.getCollection("share");
 
+      Jedis jedis = jedisPool.getResource();
       String key = "PRIZE_TOUCH";
 
       String entity = id+"_"+openId;
@@ -185,6 +188,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    {
       Result result = null;
 
+      Jedis jedis = jedisPool.getResource();
       String key = "PRIZE_" + id;
       String json = jedis.get(key);
       if (json == null)
@@ -221,6 +225,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    {
       Poi poi = null;
 
+      Jedis jedis = jedisPool.getResource();
       String key = "PRIZE_POI_" + id;
       String json = jedis.get(key);
       if (json == null)
@@ -275,8 +280,6 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       if ((0 == channel) && 0 == isDefault)
       {
          Result market = assemble(id);
-         List<String> lastList = levelMapper.last(market.getActivityId());
-         market.setLast(lastList);
          market.setBrochur(0);//待定是否保留(显示宣传页)
          return market;
       }
@@ -286,8 +289,6 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       {
          //显示数据为：商场logo，商场名称，商场地址，有效时间，商户logo，活动名称，十个最近的奖券，活动说明（优惠券的desc）
          Result market = assemble(id);
-         List<String> lastList = levelMapper.last(market.getActivityId());
-         market.setLast(lastList);
          market.setBrochur(0);
          return market;
 
@@ -300,17 +301,13 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
 
          if (levelOwn(id, market, openId) > 0)
          {
-            List<String> lastList = levelMapper.last(market.getActivityId());
-            market.setLast(lastList);
             market.setBrochur(0);
-
             return market;
          } else
          {
             //不管是否还有券都显示这个页面（如果有券则显示领取，无则显示已领完）
             //符合抽取条件，显示的数据有：商户名称，商户logo，优惠券上图片，优惠卷主题，优惠券副标题，兑奖地址，优惠券有效期，优惠劵的活动说明
             market.setImgUrl(cdnBase + "/" + market.getImgUrl());//优惠券上传的图片
-
             return market;
          }
       }
@@ -338,6 +335,8 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       market.setHaveCount(levelMapper.havePrize(id));
       market.setShopLogoUrl(cdnBase + "/" + shop.getShopLogoUrl());
       market.setLevel(result.getLevel());
+      List<String> lastList = levelMapper.last(market.getActivityId());
+      market.setLast(lastList);
 
       return market;
 
@@ -402,19 +401,19 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       this.mongoClient = mongoClient;
    }
 
-   public Jedis getJedis()
-   {
-      return jedis;
-   }
-
-   public void setJedis(Jedis jedis)
-   {
-      this.jedis = jedis;
-   }
-
    public LevelMapper getLevelMapper()
    {
       return levelMapper;
+   }
+
+   public JedisPool getJedisPool()
+   {
+      return jedisPool;
+   }
+
+   public void setJedisPool(JedisPool jedisPool)
+   {
+      this.jedisPool = jedisPool;
    }
 
    public void setLevelMapper(LevelMapper levelMapper)
