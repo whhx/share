@@ -16,10 +16,10 @@
 		</property>
 	</bean>
 
-	<bean id="jedis" class="redis.clients.jedis.Jedis">
+	<!-- <bean id="jedis" class="redis.clients.jedis.Jedis">
 		<constructor-arg name="host" value="${redis.host}" />
 		<constructor-arg name="port" value="${redis.port}" />
-	</bean>
+	</bean> -->
 
 
 	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
