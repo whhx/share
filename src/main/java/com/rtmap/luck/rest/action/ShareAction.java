@@ -85,10 +85,12 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    public long read(@PathVariable("id") String id)
    {
       String key = "PRIZE_EXPOSELOG";
-      String read = jedisPool.getResource().hget(key, id);
+      Jedis jedis = jedisPool.getResource();
+      String read = jedis.hget(key, id);
       log.debug("{}:{}={}", key, id, read);
       if (read == null)
          read = "0";
+      jedis.close();
       return Long.valueOf(read);
    }
 

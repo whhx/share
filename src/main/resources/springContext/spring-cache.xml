@@ -18,19 +18,16 @@
 
 
 	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
-        <property name="maxActive" value="50"/>
-        <property name="maxIdle" value="100"/>
-        <property name="maxWait" value="30000"/>
+        <property name="maxTotal" value="20"/>
         <property name="testOnBorrow" value="true"/>
-        <property name="testOnReturn" value="true"/>
     </bean>
-
+    
     <bean id="jedisPool" class="redis.clients.jedis.JedisPool" scope="singleton">
         <constructor-arg name="poolConfig" ref="jedisPoolConfig"/>
         <constructor-arg name="host" value="${redis.host}"/>
         <constructor-arg name="port" value="${redis.port}"/>
-        <constructor-arg name="timeout" value="360000"/>
-        <constructor-arg name="password" value="${redis.password}" />
-    </bean>
+      <!--   <constructor-arg name="timeout" value="360000"/>
+        <constructor-arg name="password" value="${redis.password}" /> -->
+    </bean> 
      
 </beans>
