@@ -103,10 +103,12 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    public Long view(@PathVariable("id") String id)
    {
       String key = "PRIZE_TOUCH";
-      String click = jedisPool.getResource().hget(key, id);
+      Jedis jedis = jedisPool.getResource();
+      String click = jedis.hget(key, id);
       log.debug("{}:{}={}", key, id, click);
       if (click == null)
          click = "0";
+      jedis.close();
       return Long.valueOf(click);
    }
 
@@ -130,6 +132,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       Boolean exists= jedis.hexists(key, id+"_"+openId);
       touch.setNum(Long.valueOf(click));
       touch.setCan(!exists);
+      jedis.close();
       return touch;
    }
    
@@ -142,7 +145,9 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    public Long click(@PathVariable("id") String id)
    {
       String key = "PRIZE_TOUCH";
-      Long click = jedisPool.getResource().hincrBy(key, id, 1);
+      Jedis jedis = jedisPool.getResource();
+      Long click = jedis.hincrBy(key, id, 1);
+      jedis.close();
       return click;
    }
 
@@ -161,9 +166,11 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
 
       Jedis jedis = jedisPool.getResource();
       String key = "PRIZE_TOUCH";
+      String key1 = "PRIZE_ENTITY";
 
       String entity = id+"_"+openId;
-      Long num = jedis.hsetnx(key, entity, entity);
+      Long num = jedis.hsetnx(key1, entity, entity);
+      jedis.expire(key1, 60*60*72);
       Date date = new Date();
       if (num == 0)
       {
@@ -179,6 +186,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
          doc = new Document("prize_id", id).append("open_id", openId).append("create_time", date)
                .append("time", date.getTime()).append("touch", 1);
          collection.insertOne(doc);
+         jedis.close();
          return click;
       }
    }
@@ -235,6 +243,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       }
       Long click = view(id.toString());
       result.setClick(click);
+      jedis.close();
       return result;
 
    }
@@ -283,6 +292,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       {
          poi = CommUtil.read(json, Poi.class);
       }
+      jedis.close();
       return poi;
    }
 
