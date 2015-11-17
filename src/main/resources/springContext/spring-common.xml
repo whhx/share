@@ -8,7 +8,7 @@
         http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
         http://www.springframework.org/schema/util
         http://www.springframework.org/schema/util/spring-util.xsd">
-
+<!--  
 	<util:map id="codeMap" map-class="java.util.HashMap">
 		<entry key="-1" value="系统内部错误" />
 		<entry key="0" value="已获奖" />
@@ -21,10 +21,10 @@
 		<entry key="7" value="条件不符合" />
 		<entry key="8" value="没有openId" />
 	</util:map>
-
+-->
 
 	<util:map id="commonMap" map-class="java.util.HashMap">
-		<entry key="access.token.url" value="${access.token.url}" />
+		<!-- <entry key="access.token.url" value="${access.token.url}" /> -->
 		<entry key="cdn.base.url" value="${cdn.base.url}" />
 	</util:map>
 	

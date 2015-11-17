@@ -29,6 +29,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.rtmap.luck.common.Result;
+import com.rtmap.luck.common.Touch;
 import com.rtmap.luck.common.Trace;
 import com.rtmap.luck.mapper.LevelMapper;
 import com.rtmap.luck.mapper.PoiMapper;
@@ -107,6 +108,29 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       return Long.valueOf(click);
    }
 
+   /**
+    * 查看点赞数
+    * 
+    * @param id券id
+    */
+   @RequestMapping(value = "/view/{id}/{openId}")
+   public Touch view2(@PathVariable("id") String id,@PathVariable("openId") String openId)
+   {
+      Touch touch=new Touch();
+      String key = "PRIZE_TOUCH";
+      Jedis jedis = jedisPool.getResource();
+      
+      String click = jedis.hget(key, id);
+      log.debug("{}:{}={}", key, id, click);
+      if (click == null)
+         click = "0";
+      
+      Boolean exists= jedis.hexists(key, id+"_"+openId);
+      touch.setNum(Long.valueOf(click));
+      touch.setCan(!exists);
+      return touch;
+   }
+   
    /**
     * 点赞数+1
     * 
@@ -257,15 +281,11 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       {
          poi = CommUtil.read(json, Poi.class);
       }
-
       return poi;
-
    }
 
    private Result fit(Long id, String openId)
    {
-      String cdnBase = commonMap.get("cdn.base.url");
-
       // 组装等级信息
       Result result = levelMapper.findById(id);
       if (result == null)
@@ -281,6 +301,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       {
          Result market = assemble(id);
          market.setBrochur(0);//待定是否保留(显示宣传页)
+         
          return market;
       }
 
@@ -307,7 +328,6 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
          {
             //不管是否还有券都显示这个页面（如果有券则显示领取，无则显示已领完）
             //符合抽取条件，显示的数据有：商户名称，商户logo，优惠券上图片，优惠卷主题，优惠券副标题，兑奖地址，优惠券有效期，优惠劵的活动说明
-            market.setImgUrl(cdnBase + "/" + market.getImgUrl());//优惠券上传的图片
             return market;
          }
       }
@@ -334,6 +354,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       market.setMarketLogoUrl(cdnBase + "/" + market.getMarketLogoUrl());
       market.setHaveCount(levelMapper.havePrize(id));
       market.setShopLogoUrl(cdnBase + "/" + shop.getShopLogoUrl());
+      market.setImgUrl(cdnBase + "/" + market.getImgUrl());//优惠券上传的图片
       market.setLevel(result.getLevel());
       List<String> lastList = levelMapper.last(market.getActivityId());
       market.setLast(lastList);

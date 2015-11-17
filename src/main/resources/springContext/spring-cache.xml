@@ -16,12 +16,6 @@
 		</property>
 	</bean>
 
-<!-- 
-	<bean id="jedis" class="redis.clients.jedis.Jedis">
-		<constructor-arg name="host" value="${redis.host}" />
-		<constructor-arg name="port" value="${redis.port}" />
-	</bean>
- -->
 
 	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
         <property name="maxActive" value="200"/>
