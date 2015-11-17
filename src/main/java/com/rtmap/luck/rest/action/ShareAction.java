@@ -53,7 +53,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
 {
 
    private static Logger log = LoggerFactory.getLogger(ShareAction.class);
-   
+
    private LevelMapper levelMapper;
 
    private PoiMapper poiMapper;
@@ -78,7 +78,8 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
     * 
     * 返回阅读数
     * 
-    * @param id（券ID）
+    * @param id
+    *           （券ID）
     * @return
     */
    @RequestMapping(value = "/read/{id}")
@@ -118,24 +119,24 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
     * @param id券id
     */
    @RequestMapping(value = "/view/{id}/{openId}")
-   public Touch view2(@PathVariable("id") String id,@PathVariable("openId") String openId)
+   public Touch view2(@PathVariable("id") String id, @PathVariable("openId") String openId)
    {
-      Touch touch=new Touch();
+      Touch touch = new Touch();
       String key = "PRIZE_TOUCH";
       Jedis jedis = jedisPool.getResource();
-      
+
       String click = jedis.hget(key, id);
       log.debug("{}:{}={}", key, id, click);
       if (click == null)
          click = "0";
-      
-      Boolean exists= jedis.hexists(key, id+"_"+openId);
+
+      Boolean exists = jedis.hexists(key, id + "_" + openId);
       touch.setNum(Long.valueOf(click));
       touch.setCan(!exists);
       jedis.close();
       return touch;
    }
-   
+
    /**
     * 点赞数+1
     * 
@@ -166,29 +167,28 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
 
       Jedis jedis = jedisPool.getResource();
       String key = "PRIZE_TOUCH";
-      String key1 = "PRIZE_ENTITY";
+      String key1 = "PRIZE_TOUCH_OPENID";
 
-      String entity = id+"_"+openId;
+      String entity = id + "_" + openId;
       Long num = jedis.hsetnx(key1, entity, entity);
-      jedis.expire(key1, 60*60*72);
+      jedis.expire(key1, 60 * 60 * 72);
       Date date = new Date();
+      doc = new Document("prize_id", id).append("open_id", openId).append("create_time", date)
+            .append("time", date.getTime());
+
+      Long click = 0L;
       if (num == 0)
       {
-
-         doc = new Document("prize_id", id).append("open_id", openId).append("create_time", date)
-               .append("time", date.getTime()).append("touch", 0);
-         collection.insertOne(doc);
-         return view(id);
+         doc.append("touch", 0);
+         click = view(id);
       } else
       {
-         Long click = jedis.hincrBy(key, id, 1);
-
-         doc = new Document("prize_id", id).append("open_id", openId).append("create_time", date)
-               .append("time", date.getTime()).append("touch", 1);
+         click = jedis.hincrBy(key, id, 1);
+         doc.append("touch", 1);
          collection.insertOne(doc);
-         jedis.close();
-         return click;
       }
+      jedis.close();
+      return click;
    }
 
    /**
@@ -313,7 +313,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       {
          Result market = assemble(id);
          market.setBrochur(0);//待定是否保留(显示宣传页)
-         
+
          return market;
       }
 
@@ -353,7 +353,8 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       Result result = levelMapper.findById(id);
 
       Result market = levelMapper.findMarket(id);
-      if(market == null){
+      if (market == null)
+      {
          market = result;
       }
       Result shop = levelMapper.findShop(id);
