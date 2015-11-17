@@ -167,11 +167,11 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
 
       Jedis jedis = jedisPool.getResource();
       String key = "PRIZE_TOUCH";
-      String key1 = "PRIZE_TOUCH_OPENID";
+      String openIdKey = "PRIZE_TOUCH_OPENID";
 
       String entity = id + "_" + openId;
-      Long num = jedis.hsetnx(key1, entity, entity);
-      jedis.expire(key1, 60 * 60 * 72);
+      Long num = jedis.hsetnx(openIdKey, entity, entity);
+      jedis.expire(openIdKey, 60 * 60 * 24 * 10);//缓存10天
       Date date = new Date();
       doc = new Document("prize_id", id).append("open_id", openId).append("create_time", date)
             .append("time", date.getTime());
