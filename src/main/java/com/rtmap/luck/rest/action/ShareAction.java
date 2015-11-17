@@ -281,9 +281,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       {
          poi = CommUtil.read(json, Poi.class);
       }
-
       return poi;
-
    }
 
    private Result fit(Long id, String openId)
@@ -303,6 +301,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       {
          Result market = assemble(id);
          market.setBrochur(0);//待定是否保留(显示宣传页)
+         
          return market;
       }
 

@@ -9,7 +9,6 @@ package com.rtmap.luck.utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import org.joda.time.Period;
 import org.joda.time.format.PeriodFormatter;
