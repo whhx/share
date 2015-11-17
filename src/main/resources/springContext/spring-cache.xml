@@ -16,11 +16,12 @@
 		</property>
 	</bean>
 
+<!-- 
 	<bean id="jedis" class="redis.clients.jedis.Jedis">
 		<constructor-arg name="host" value="${redis.host}" />
 		<constructor-arg name="port" value="${redis.port}" />
 	</bean>
-
+ -->
 
 	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
         <property name="maxActive" value="200"/>
@@ -34,7 +35,8 @@
         <constructor-arg name="poolConfig" ref="jedisPoolConfig"/>
         <constructor-arg name="host" value="${redis.host}"/>
         <constructor-arg name="port" value="${redis.port}"/>
-        <constructor-arg name="timeout" value="3600000"/>
+        <constructor-arg name="timeout" value="360000"/>
+        <constructor-arg name="password" value="${redis.password}" />
     </bean>
      
 </beans>
