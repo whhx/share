@@ -242,7 +242,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       } else
       {
          result = CommUtil.read(json, Result.class);
-         result.setHaveCount(0);
+         //result.setHaveCount(0);
       }
       Long click = view(id.toString());
       result.setClick(click);
