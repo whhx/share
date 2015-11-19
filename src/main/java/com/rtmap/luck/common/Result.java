@@ -159,12 +159,10 @@ public class Result
     */
    private Integer isDefault;
    
-   
    /**
     * 返回的券数
     */
    private Integer haveCount;
-   
    
    public String getShopName()
    {

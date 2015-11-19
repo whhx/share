@@ -52,7 +52,7 @@ import net.spy.memcached.transcoders.IntegerTranscoder;
 public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
 {
 
-   private static Logger log = LoggerFactory.getLogger(ShareAction.class);
+   private static final Logger log = LoggerFactory.getLogger(ShareAction.class);
 
    private LevelMapper levelMapper;
 
@@ -89,6 +89,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       Jedis jedis = jedisPool.getResource();
       String read = jedis.hget(key, id);
       log.debug("{}:{}={}", key, id, read);
+      log.info("（调用阅读接口）券（ID：" + id + "）被阅读的数量为！"+read);
       if (read == null)
          read = "0";
       jedis.close();
@@ -130,7 +131,8 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       if (click == null)
          click = "0";
 
-      Boolean exists = jedis.hexists(key, id + "_" + openId);
+      String openIdKey = "PRIZE_TOUCH_OPENID";
+      Boolean exists = jedis.hexists(openIdKey, id + "_" + openId);
       touch.setNum(Long.valueOf(click));
       touch.setCan(!exists);
       jedis.close();
@@ -240,6 +242,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       } else
       {
          result = CommUtil.read(json, Result.class);
+         result.setHaveCount(0);
       }
       Long click = view(id.toString());
       result.setClick(click);
@@ -340,6 +343,7 @@ public class ShareAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
          {
             //不管是否还有券都显示这个页面（如果有券则显示领取，无则显示已领完）
             //符合抽取条件，显示的数据有：商户名称，商户logo，优惠券上图片，优惠卷主题，优惠券副标题，兑奖地址，优惠券有效期，优惠劵的活动说明
+            //market.setBrochur(1);
             return market;
          }
       }
