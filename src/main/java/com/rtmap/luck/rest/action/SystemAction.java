@@ -7,6 +7,7 @@
  */
 package com.rtmap.luck.rest.action;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,13 +34,22 @@ public class SystemAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
       super("callback");
    }
 
-
    @RequestMapping(value = "/get/{key}")
    public String get(@PathVariable("key") String key)
    {
       Jedis jedis = jedisPool.getResource();
-      String value = jedis.get(key);
-      jedis.close();
+      String value = "";
+      try
+      {
+         value = jedis.get(key);
+      } catch (Exception e)
+      {
+         value = e.getMessage();
+      } finally
+      {
+         jedis.close();
+      }
+
       return value;
    }
 
@@ -47,8 +57,17 @@ public class SystemAction extends AbstractJsonpResponseBodyAdvice//jsonp支持
    public Map<String, String> hget(@PathVariable("key") String key)
    {
       Jedis jedis = jedisPool.getResource();
-      Map<String, String> value = jedis.hgetAll(key);
-      jedis.close();
+      Map<String, String> value = new HashMap<String, String>();
+      try
+      {
+         value = jedis.hgetAll(key);
+      } catch (Exception e)
+      {
+         value.put("exception", e.getMessage());
+      } finally
+      {
+         jedis.close();
+      }
       return value;
    }
 
